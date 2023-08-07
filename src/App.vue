@@ -5,7 +5,7 @@
       <el-form @submit.prevent @keyup.enter.native="onSubmit" :model="formdata" label-width="120px">
         <el-input v-model="formdata.question" placeholder="请输入问题" autofocus="autofocus" clearable>
           <template #append>
-            <el-button :icon="Search" @click="onSubmit" />
+            <el-button :icon="Search" :loading="loading" :disabled="loading" @click="onSubmit" />
           </template>
         </el-input>
       </el-form>
