@@ -1,0 +1,21 @@
+stages:
+  - build
+  - deploy
+
+before_script:
+  - 'cat /etc/lsb-release && uname -a && pwd && ls -ashl'
+  - 'node --version && npm --version && yarn --version'
+
+build:
+  stage: build
+  cache:
+    paths:
+      - node_modules/
+    untracked: false
+    when: on_success
+  script:
+    - yarn install
+    - yarn build
+  artifacts:
+    paths:
+      - dist/
