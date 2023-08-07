@@ -3,7 +3,7 @@
     <div class="area-input">
       <!-- <h2>为什么人有这么多为什么</h2> -->
       <el-form @submit.prevent @keyup.enter.native="onSubmit" :model="formdata" label-width="120px">
-        <el-input v-model="formdata.question" placeholder="请输入问题" clearable>
+        <el-input v-model="formdata.question" placeholder="请输入问题" autofocus="autofocus" clearable>
           <template #append>
             <el-button :icon="Search" @click="onSubmit" />
           </template>
@@ -11,10 +11,9 @@
       </el-form>
     </div>
     <div class="area-result" v-loading="loading">
-      <div>
-        {{ formdata.result }}
-      </div>
+      <pre v-html="formdata.result"></pre>
     </div>
+
   </div>
 </template>
 
@@ -81,4 +80,12 @@ html,body{
   text-align: left;
   margin-top: 2rem;
 }
+
+pre {
+  text-wrap: wrap;
+  background: #f2f2f2;
+  padding: 20px;
+  border-radius: 10px;
+}
+
 </style>
