@@ -1,7 +1,17 @@
 <template>
-  <div>
+  <div class="dialog-container" ref="scrollContainer">
+    <div
+      v-for="(message, index) in dialogue.messages"
+      :key="index"
+      :class="message.isUser ? 'user-message' : 'bot-message'"
+      class="message"
+      v-loading="message.loading"
+    >
+      {{ message.content }}
+    </div>
+  </div>
+  <div class="answer-container">
     <div class="area-input">
-      <!-- <h2>为什么人有这么多为什么</h2> -->
       <el-form
         @submit.prevent
         @keyup.enter.native="onSubmit"
@@ -10,6 +20,7 @@
       >
         <el-input
           v-model="formdata.question"
+          :disabled="loading"
           placeholder="请输入问题"
           autofocus="autofocus"
           clearable
@@ -25,46 +36,58 @@
         </el-input>
       </el-form>
     </div>
-    <div class="area-result" v-loading="loading">
-      <pre v-html="formdata.result"></pre>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, nextTick } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 import { auto as followSystemColorScheme } from 'darkreader';
 const loading = ref(false);
+const scrollContainer = ref(null);
 const formdata = reactive({
   question: '',
   result: '',
 });
+const dialogue = reactive({
+  messages: [],
+});
 const onSubmit = () => {
-  console.log(formdata.question);
   getResult();
 };
-// 回调函数
-const getResult = () => {
+const getResult = async () => {
   loading.value = true;
-  fetch('https://glm.aiursoft.cn', {
+  dialogue.messages.push({ content: formdata.question, isUser: true });
+  dialogue.messages.push({ content: '', isUser: false, loading: true });
+  scrollToBottom();
+  const ans = await fetch('https://glm.aiursoft.cn', {
     method: 'post',
     body: JSON.stringify({
       prompt: formdata.question,
     }),
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .then((data) => {
-      loading.value = false;
-      formdata.result = data.response;
-    })
-    .catch(function (error) {
-      loading.value = false;
-      formdata.result = error.message;
-      console.log('错误信息：' + error.message);
+  }).catch(function (error) {
+    loading.value = false;
+    dialogue.messages.pop();
+    dialogue.messages.push({ content: error, isUser: false });
+    formdata.question = '';
+    scrollToBottom();
+  });
+  const data = await ans.json();
+  console.log(data);
+  loading.value = false;
+  dialogue.messages.pop();
+  dialogue.messages.push({ content: data.response, isUser: false });
+  formdata.question = '';
+  scrollToBottom();
+};
+const scrollToBottom = async () => {
+  await nextTick();
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTo({
+      top: scrollContainer.value.scrollHeight,
+      behavior: 'smooth',
     });
+  }
 };
 onMounted(() => {
   followSystemColorScheme();
@@ -95,17 +118,71 @@ body {
 }
 
 .area-input {
+  margin-top: 20px;
+  width: 100%;
 }
 
-.area-result {
-  text-align: left;
-  margin-top: 2rem;
-}
-
-pre {
-  text-wrap: wrap;
-  background: #f2f2f2;
+.dialog-container {
+  height: 60vh;
+  width: 600px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow-y: auto;
   padding: 20px;
-  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 5px;
+  text-align: left;
+  max-width: 400px;
+}
+
+.user-message {
+  background-color: #e6f7ff;
+  align-self: flex-start;
+}
+
+.bot-message {
+  min-width: 50px;
+  background-color: #f0f0f0;
+  align-self: flex-end;
+}
+
+#user-input {
+  width: 100%;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.answer-container {
+  width: 600px;
+  margin: 0 auto;
+}
+@media screen and (max-width: 768px) {
+  .area-input {
+    width: 100%;
+  }
+
+  .dialog-container {
+    width: 90%;
+    height: 80%;
+  }
+
+  .dialog {
+    padding: 10px;
+  }
+  .answer-container {
+    width: 90%;
+    margin: 0 auto;
+  }
+  .message {
+    max-width: 80%;
+  }
 }
 </style>
