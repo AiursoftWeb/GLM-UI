@@ -6,8 +6,8 @@
       :class="message.isUser ? 'user-message' : 'bot-message'"
       class="message"
       v-loading="message.loading"
+      v-html="$filters.renderContent(message.content)"
     >
-      {{ message.content }}
     </div>
   </div>
   <div class="answer-container">
