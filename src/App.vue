@@ -7,8 +7,7 @@
       class="message"
       v-loading="message.loading"
       v-html="$filters.renderContent(message.content)"
-    >
-    </div>
+    ></div>
   </div>
   <div class="answer-container">
     <div class="area-input">
@@ -22,7 +21,6 @@
       >
         <el-input
           v-model="formdata.question"
-          :disabled="loading"
           placeholder="请输入问题"
           autofocus="autofocus"
           clearable
@@ -40,16 +38,32 @@
       </el-form>
     </div>
   </div>
+  <div class="space">
+    <a href="https://www.aiursoft.cn/" target="_blank"
+      ><el-button class="float-button">Home</el-button>
+    </a>
+    <a href="https://gitlab.aiursoft.cn/aiursoft/glm-ui" target="_blank"
+      ><el-button class="float-button">Source</el-button>
+    </a>
+    <el-tooltip :content="version" placement="left"
+      ><el-button>Commit</el-button></el-tooltip
+    >
+    <a href="https://huggingface.co/THUDM/chatglm-6b" target="_blank"
+      ><el-button class="float-button">About</el-button>
+    </a>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from "vue";
-import { Search } from "@element-plus/icons-vue";
-import { auto as followSystemColorScheme } from "darkreader";
+import { ref, reactive, onMounted, nextTick } from 'vue';
+import { Search, House } from '@element-plus/icons-vue';
+import { versionData } from './version.js';
+import { auto as followSystemColorScheme } from 'darkreader';
+const version = ref('');
 const loading = ref(false);
 const scrollContainer = ref(null);
 const formdata = reactive({
-  question: "",
+  question: '',
 });
 const dialogue = reactive({
   messages: [],
@@ -58,7 +72,7 @@ const onSubmit = () => {
   getResult();
 };
 const reset = () => {
-  formdata.question = "";
+  formdata.question = '';
   dialogue.messages = [];
 };
 const getResult = async () => {
@@ -76,8 +90,8 @@ const getResult = async () => {
   await nextTick();
   dialogue.messages.push({ content: formdata.question, isUser: true });
   scrollToBottom();
-  const ans = await fetch("https://glm.aiursoft.cn", {
-    method: "post",
+  const ans = await fetch('https://glm.aiursoft.cn', {
+    method: 'post',
     body: JSON.stringify({
       prompt: formdata.question,
       history: result,
@@ -85,14 +99,14 @@ const getResult = async () => {
   }).catch(function (error) {
     loading.value = false;
     dialogue.messages.push({ content: error, isUser: false });
-    formdata.question = "";
+    formdata.question = '';
     scrollToBottom();
   });
-  const data = await ans.json();
+  const data = await ans?.json();
   console.log(data);
   loading.value = false;
   dialogue.messages.push({ content: data.response, isUser: false });
-  formdata.question = "";
+  formdata.question = '';
   scrollToBottom();
 };
 const scrollToBottom = async () => {
@@ -100,12 +114,13 @@ const scrollToBottom = async () => {
   if (scrollContainer.value) {
     scrollContainer.value.scrollTo({
       top: scrollContainer.value.scrollHeight,
-      behavior: "smooth",
+      behavior: 'smooth',
     });
   }
 };
 onMounted(() => {
   followSystemColorScheme();
+  version.value = versionData.gitCommitId;
 });
 </script>
 
@@ -184,7 +199,22 @@ body {
   width: 600px;
   margin: 0 auto;
 }
-
+.float-group {
+  position: fixed;
+  right: 100px;
+  bottom: 100px;
+  justify-content: flex-end;
+}
+.space {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 80px;
+  align-items: flex-end;
+  position: fixed;
+  right: 100px;
+  bottom: 100px;
+}
 @media screen and (max-width: 768px) {
   .area-input {
     width: 100%;
@@ -206,6 +236,18 @@ body {
 
   .message {
     max-width: 80%;
+  }
+  .float-group {
+    position: inherit;
+    padding-top: 1rem;
+  }
+  .space {
+    position: inherit;
+    width: 90%;
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 4px;
   }
 }
 </style>
