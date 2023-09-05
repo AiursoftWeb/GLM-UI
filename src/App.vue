@@ -20,7 +20,6 @@
       >
         <el-input
           v-model="formdata.question"
-          :disabled="loading"
           placeholder="请输入问题"
           autofocus="autofocus"
           clearable
@@ -37,12 +36,30 @@
       </el-form>
     </div>
   </div>
+  <div class="float-group">
+    <el-space direction="vertical" alignment="flex-end">
+      <a href="https://www.aiursoft.cn/" target="_blank"
+        ><el-button class="float-button">Home</el-button>
+      </a>
+      <a href="https://gitlab.aiursoft.cn/aiursoft/glm-ui" target="_blank"
+        ><el-button class="float-button">Source</el-button>
+      </a>
+      <el-tooltip :content="version" placement="left"
+        ><el-button>Commit</el-button></el-tooltip
+      >
+      <a href="https://huggingface.co/THUDM/chatglm-6b" target="_blank"
+        ><el-button class="float-button">About</el-button>
+      </a>
+    </el-space>
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue';
-import { Search } from '@element-plus/icons-vue';
+import { Search, House } from '@element-plus/icons-vue';
+import { versionData } from './version.js';
 import { auto as followSystemColorScheme } from 'darkreader';
+const version = ref('');
 const loading = ref(false);
 const scrollContainer = ref(null);
 const formdata = reactive({
@@ -91,6 +108,7 @@ const scrollToBottom = async () => {
 };
 onMounted(() => {
   followSystemColorScheme();
+  version.value = versionData.gitCommitId;
 });
 </script>
 
@@ -184,5 +202,11 @@ body {
   .message {
     max-width: 80%;
   }
+}
+.float-group {
+  position: fixed;
+  right: 100px;
+  bottom: 100px;
+  justify-content: flex-end;
 }
 </style>
