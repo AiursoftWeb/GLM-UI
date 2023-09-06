@@ -5,65 +5,56 @@
       :key="index"
       :class="message.isUser ? 'user-message' : 'bot-message'"
       class="message"
-      v-loading="message.loading"
-      v-html="$filters.renderContent(message.content)"
-    ></div>
+    >
+      <el-icon v-if="message.loading" class="is-loading" :size="20" style="margin: 1rem 0"><Loading /></el-icon>
+      <div v-else v-html="$filters.renderContent(message.content)"></div>
+    </div>
+
+    <el-button class="reset-button" type="danger" @click="reset" icon="delete" plain circle></el-button>
   </div>
   <div class="answer-container">
     <div class="area-input">
-      <el-button @click="reset" size="large">清空</el-button>
-      <el-form
-        @submit.prevent
-        @keyup.enter.native="onSubmit"
-        :model="formdata"
-        label-width="120px"
-        style="width: 100%"
-      >
+      <el-form @submit.prevent @keyup.ctrl.enter="onSubmit" :model="formdata" label-width="120px" style="width: 100%">
         <el-input
           v-model="formdata.question"
           placeholder="请输入问题"
+          type="textarea"
+          :autosize="{ minRows: 4, maxRows: 8 }"
+          resize="none"
           autofocus="autofocus"
           clearable
           size="large"
         >
           <template #append>
-            <el-button
-              :icon="Search"
-              :loading="loading"
-              :disabled="loading"
-              @click="onSubmit"
-            />
+            <el-button :icon="Search" :loading="loading" :disabled="loading" @click="onSubmit" />
           </template>
         </el-input>
       </el-form>
     </div>
+    <div class="button-group" fill>
+      <el-tooltip :content="`Ctrl+Enter`" placement="top">
+        <el-button @click="onSubmit" type="primary">发送</el-button>
+      </el-tooltip>
+    </div>
   </div>
-  <div class="space">
-    <a href="https://www.aiursoft.cn/" target="_blank"
-      ><el-button class="float-button">Home</el-button>
-    </a>
-    <a href="https://gitlab.aiursoft.cn/aiursoft/glm-ui" target="_blank"
-      ><el-button class="float-button">Source</el-button>
-    </a>
-    <el-tooltip :content="version" placement="left"
-      ><el-button>Commit</el-button></el-tooltip
-    >
-    <a href="https://huggingface.co/THUDM/chatglm-6b" target="_blank"
-      ><el-button class="float-button">About</el-button>
-    </a>
-  </div>
+  <el-space class="references">
+    <el-link href="https://www.aiursoft.cn/" target="_blank">Home</el-link>
+    <el-link href="https://gitlab.aiursoft.cn/aiursoft/glm-ui" target="_blank">Source </el-link>
+    <el-tooltip :content="version" placement="top"><el-link href="">Commit</el-link></el-tooltip>
+    <el-link href="https://huggingface.co/THUDM/chatglm-6b" target="_blank">About </el-link>
+  </el-space>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue';
-import { Search, House } from '@element-plus/icons-vue';
-import { versionData } from './version.js';
-import { auto as followSystemColorScheme } from 'darkreader';
-const version = ref('');
+import { ref, reactive, onMounted, nextTick } from "vue";
+import { Search, House } from "@element-plus/icons-vue";
+import { versionData } from "./version.js";
+import { auto as followSystemColorScheme } from "darkreader";
+const version = ref("");
 const loading = ref(false);
 const scrollContainer = ref(null);
 const formdata = reactive({
-  question: '',
+  question: "",
 });
 const dialogue = reactive({
   messages: [],
@@ -72,11 +63,10 @@ const onSubmit = () => {
   getResult();
 };
 const reset = () => {
-  formdata.question = '';
+  formdata.question = "";
   dialogue.messages = [];
 };
 const getResult = async () => {
-  loading.value = true;
   const result = dialogue.messages.reduce((acc, curr, idx) => {
     if (idx % 2 === 0) {
       //当索引值是偶数时，创建一个新的子数组
@@ -89,32 +79,34 @@ const getResult = async () => {
   }, []);
   await nextTick();
   dialogue.messages.push({ content: formdata.question, isUser: true });
+  const respMessage = reactive({ loading: true, isUser: false });
+  dialogue.messages.push(respMessage);
   scrollToBottom();
-  const ans = await fetch('https://glm.aiursoft.cn', {
-    method: 'post',
-    body: JSON.stringify({
-      prompt: formdata.question,
-      history: result,
-    }),
-  }).catch(function (error) {
-    loading.value = false;
-    dialogue.messages.push({ content: error, isUser: false });
-    formdata.question = '';
-    scrollToBottom();
-  });
-  const data = await ans?.json();
-  console.log(data);
-  loading.value = false;
-  dialogue.messages.push({ content: data.response, isUser: false });
-  formdata.question = '';
-  scrollToBottom();
+  try {
+    const question = formdata.question;
+    formdata.question = "";
+    const resp = await fetch("https://glm.aiursoft.cn", {
+      method: "post",
+      body: JSON.stringify({
+        prompt: question,
+        history: result,
+      }),
+    });
+    const data = await resp.json();
+    console.log(data);
+    respMessage.content = data.response;
+  } catch (error) {
+    respMessage.content = error;
+  } finally {
+    respMessage.loading = false;
+  }
 };
 const scrollToBottom = async () => {
   await nextTick();
   if (scrollContainer.value) {
     scrollContainer.value.scrollTo({
       top: scrollContainer.value.scrollHeight,
-      behavior: 'smooth',
+      behavior: "smooth",
     });
   }
 };
@@ -138,43 +130,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  padding: 4rem 20vw;
-  height: 100%;
-  overflow-y: auto;
-
-  @media screen and (max-width: 768px) {
-    &#app {
-      padding: 2rem 5vw;
-    }
-  }
-}
-
-.area-input {
+  padding: 0;
+  height: 100vh;
   display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  width: 100%;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 768px;
+  padding: 2rem 0 0;
+  box-sizing: border-box;
 }
 
 .dialog-container {
-  height: 60vh;
-  width: 600px;
-  margin: 0 auto;
+  flex: 1;
   border: 1px solid #ccc;
-  border-radius: 5px;
   overflow-y: auto;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   box-sizing: border-box;
+  padding: 2rem;
+  position: relative;
+}
+
+.reset-button {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
 }
 
 .message {
-  padding: 10px;
+  padding: 0 1rem;
   border-radius: 5px;
   text-align: left;
-  max-width: 400px;
+  max-width: 80%;
 }
 
 .user-message {
@@ -183,71 +171,60 @@ body {
 }
 
 .bot-message {
-  min-width: 50px;
   background-color: #f0f0f0;
   align-self: flex-end;
 }
 
-#user-input {
-  width: 100%;
-  margin-top: 10px;
+.answer-container {
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-top: none;
+  position: relative;
+  padding: 1rem;
 }
 
-.answer-container {
-  width: 600px;
-  margin: 0 auto;
-}
-.float-group {
-  position: fixed;
-  right: 100px;
-  bottom: 100px;
-  justify-content: flex-end;
-}
-.space {
+.button-group {
+  position: absolute;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 80px;
-  align-items: flex-end;
-  position: fixed;
-  right: 100px;
-  bottom: 100px;
+  flex-wrap: nowrap;
+  right: 1.5rem;
+  bottom: 1.5rem;
 }
+
+.area-input {
+  width: 100%;
+  display: flex;
+  margin-right: 1rem;
+}
+
+.references {
+  width: 768px;
+  justify-content: space-around;
+  margin: 2rem auto;
+}
+
 @media screen and (max-width: 768px) {
-  .area-input {
-    width: 100%;
+  #app {
+    width: 100vw;
+    padding: 0;
+    border-top: none;
+    border-left: none;
+    border-right: none;
   }
 
   .dialog-container {
-    width: 90%;
-    height: 80%;
-  }
-
-  .dialog {
-    padding: 10px;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ccc;
   }
 
   .answer-container {
-    width: 90%;
-    margin: 0 auto;
+    border: none;
+    border-bottom: 1px solid #ccc;
   }
 
-  .message {
-    max-width: 80%;
-  }
-  .float-group {
-    position: inherit;
-    padding-top: 1rem;
-  }
-  .space {
-    position: inherit;
-    width: 90%;
+  .references {
+    width: 100%;
     margin: 1rem auto;
-    display: flex;
-    flex-direction: row-reverse;
-    gap: 4px;
   }
 }
 </style>
