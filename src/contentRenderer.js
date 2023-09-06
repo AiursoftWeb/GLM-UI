@@ -1,9 +1,7 @@
-import './main.css'
-
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
-import markdownRenderFactory from "markdown-it";
-const contentRenderer = markdownRenderFactory({
+import MarkdownIt from "markdown-it";
+const contentRenderer = new MarkdownIt({
   highlight: function (str, lang) {
     if (lang && hljs.getLanguage(lang)) {
       try {
@@ -15,7 +13,7 @@ const contentRenderer = markdownRenderFactory({
       } catch (__) {}
     }
 
-    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + "</code></pre>";
+    return '<pre class="hljs"><code>' + contentRenderer.utils.escapeHtml(str) + "</code></pre>";
   },
 });
 
